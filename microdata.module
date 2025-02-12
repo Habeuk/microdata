@@ -1,0 +1,73 @@
+<?php
+
+use \Drupal\Core\Form\FormStateInterface;
+
+/**
+ * @file
+ * Primary module hooks for microdata module.
+ */
+
+function microdata_form_node_type_edit_form_alter(&$form, &$form_state, $form_id) {
+    $configs = \Drupal::config('node.type.' . $form['type']["#default_value"]);
+    $form["micro_data_configs"] = [
+        '#type' => 'details',
+        '#title' => t('Microdata Configurations'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#weight' => 5,
+        '#group' => 'additional_settings',
+        '#description' => t('Configure the microdata for this content type.'),
+        'microdata_enabled' => [
+            "#type" => "checkbox",
+            "#default_value" => $configs->get('microdata_enabled') ?? False,
+            "#title" => t("Enable Microdata"),
+            "#description" => t("Enable microdata for this content type."),
+        ],
+        'microdata_type' => [
+            "#type" => "textfield",
+            "#default_value" => $configs->get('microdata_type') ?? "",
+            "#title" => t("Microdata Type"),
+            "#description" => t("Entrez le type de microdata pour ce contenu."),
+            "#states" => [
+                "visible" => [
+                    ":input[name='microdata_enabled']" => ["checked" => TRUE]
+                ]
+            ]
+        ]
+    ];
+
+    $form['actions']["submit"]['#submit'][] = '_microdata_node_type_edit_form_submit';
+}
+
+/**
+ * implement hook_FORM_ID_submit().
+ * @param mixed $form
+ * @param mixed $form_state
+ * @return void
+ */
+function _microdata_node_type_edit_form_submit($form, FormStateInterface &$form_state) {
+    $configs = \Drupal::configFactory()->getEditable('node.type.' . $form_state->getValue('type'));
+    $configs->set('microdata_enabled', $form_state->getValue('microdata_enabled'));
+    $configs->set('microdata_type', $form_state->getValue('microdata_type'));
+    $configs->save();
+}
+
+/**
+ * implements hook_node_presave().
+ * @param  \Drupal\node\Entity\Node $node
+ * @return void
+ */
+function microdata_preprocess_region(&$vars) {
+    if ($vars["region"] == "content") {
+        if ($node = \Drupal::routeMatch()->getParameter('node')) {
+            if ($node instanceof \Drupal\node\NodeInterface) {
+                $bundle = $node->bundle();
+                $config = \Drupal::config('node.type.' . $bundle);
+                if ($config->get('microdata_enabled')) {
+                    $vars["attributes"]["itemscope"] = True;
+                    $vars["attributes"]["itemType"] = $config->get('microdata_type');
+                }
+            }
+        }
+    }
+}

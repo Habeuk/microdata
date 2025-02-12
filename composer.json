@@ -1,0 +1,14 @@
+{
+    "name": "habeuk/microdata",
+    "description": "Drupal module to handle microdatas",
+    "type": "drupal-module",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "vystii",
+            "email": "ngahabanda@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}

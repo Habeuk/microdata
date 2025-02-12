@@ -1,0 +1,5 @@
+name: 'microdata'
+type: module
+description: 'module to handle microdatas on nodes'
+package: Custom
+core_version_requirement: ^10 || ^11

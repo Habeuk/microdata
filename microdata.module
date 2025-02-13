@@ -9,6 +9,8 @@ use \Drupal\Core\Form\FormStateInterface;
 
 function microdata_form_node_type_edit_form_alter(&$form, &$form_state, $form_id) {
     $configs = \Drupal::config('node.type.' . $form['type']["#default_value"]);
+    $theme = \Drupal::theme()->getActiveTheme();
+    $regions = system_region_list($theme->getName());
     $form["micro_data_configs"] = [
         '#type' => 'details',
         '#title' => t('Microdata Configurations'),
@@ -33,6 +35,18 @@ function microdata_form_node_type_edit_form_alter(&$form, &$form_state, $form_id
                     ":input[name='microdata_enabled']" => ["checked" => TRUE]
                 ]
             ]
+        ],
+        'microdata_region' => [
+            "#type" => "select",
+            "#default_value" => $configs->get('microdata_region') ?? "content",
+            "#title" => t("Microdata Region"),
+            "#description" => t("Select the region where the itemscope will be initialize."),
+            "#options" => $regions,
+            "#states" => [
+                "visible" => [
+                    ":input[name='microdata_enabled']" => ["checked" => TRUE]
+                ]
+            ]
         ]
     ];
 
@@ -49,6 +63,7 @@ function _microdata_node_type_edit_form_submit($form, FormStateInterface &$form_
     $configs = \Drupal::configFactory()->getEditable('node.type.' . $form_state->getValue('type'));
     $configs->set('microdata_enabled', $form_state->getValue('microdata_enabled'));
     $configs->set('microdata_type', $form_state->getValue('microdata_type'));
+    $configs->set('microdata_region', $form_state->getValue('microdata_region'));
     $configs->save();
 }
 
@@ -58,15 +73,13 @@ function _microdata_node_type_edit_form_submit($form, FormStateInterface &$form_
  * @return void
  */
 function microdata_preprocess_region(&$vars) {
-    if ($vars["region"] == "content") {
-        if ($node = \Drupal::routeMatch()->getParameter('node')) {
-            if ($node instanceof \Drupal\node\NodeInterface) {
-                $bundle = $node->bundle();
-                $config = \Drupal::config('node.type.' . $bundle);
-                if ($config->get('microdata_enabled')) {
-                    $vars["attributes"]["itemscope"] = True;
-                    $vars["attributes"]["itemType"] = $config->get('microdata_type');
-                }
+    if ($node = \Drupal::routeMatch()->getParameter('node')) {
+        if ($node instanceof \Drupal\node\NodeInterface) {
+            $bundle = $node->bundle();
+            $config = \Drupal::config("node.type.$bundle");
+            if ($config->get('microdata_enabled') && ($vars["region"] == $config->get('microdata_region'))) {
+                $vars["attributes"]["itemscope"] = True;
+                $vars["attributes"]["itemType"] = $config->get('microdata_type');
             }
         }
     }

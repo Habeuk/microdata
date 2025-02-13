@@ -9,8 +9,8 @@ use \Drupal\Core\Form\FormStateInterface;
 
 function microdata_form_node_type_edit_form_alter(&$form, &$form_state, $form_id) {
     $configs = \Drupal::config('node.type.' . $form['type']["#default_value"]);
-    $theme = \Drupal::theme()->getActiveTheme();
-    $regions = system_region_list($theme->getName());
+    $defaultTheme = \Drupal::config("system.theme")->get("default");
+    $regions = system_region_list($defaultTheme);
     $form["micro_data_configs"] = [
         '#type' => 'details',
         '#title' => t('Microdata Configurations'),
